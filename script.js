@@ -1,111 +1,123 @@
- // Initialize todos array from localStorage or empty array
-let todos = JSON.parse(localStorage.getItem('todos')) || [];
-let currentFilter = 'all';
+// Get the important elements from our HTML
+const input = document.getElementById('todoInput');
+const todoList = document.getElementById('todoList');
+const todoCount = document.getElementById('todoCount');
 
- // Function to save todos to localStorage
-function saveTodos() {
-localStorage.setItem('todos', JSON.stringify(todos));
-updateTodoCount();
-}
+// Create an empty array to store our todos
+let todos = [];
 
- // Function to add a new todo
+// Function to add a new todo
 function addTodo() {
-    const input = document.getElementById('todoInput');
+    // Get the text from the input box
     const text = input.value.trim();
-
+    
+    // Only add the todo if there's actually text
     if (text) {
+        // Create a new todo object
         const todo = {
-            id: Date.now(),
-            text: text,
-            completed: false,
-            timestamp: new Date().toLocaleString()
+            id: Date.now(),              // Use current timestamp as unique ID
+            text: text,                  // The todo text
+            completed: false             // New todos start as not completed
         };
         
+        // Add the new todo to our array
         todos.push(todo);
-        saveTodos();
-        renderTodos();
+        
+        // Clear the input box
         input.value = '';
+        
+        // Update the display
+        displayTodos();
+        updateCount();
     }
 }
 
- // Function to toggle todo completion status
+// Function to toggle a todo between completed and not completed
 function toggleTodo(id) {
-    todos = todos.map(todo => {
-        if (todo.id === id) {
-            return { ...todo, completed: !todo.completed };
+    // Go through each todo
+    for (let i = 0; i < todos.length; i++) {
+        // If this is the todo we want to change
+        if (todos[i].id === id) {
+            // Flip its completed status
+            todos[i].completed = !todos[i].completed;
+            break;
         }
-        return todo;
-    });
-    saveTodos();
-    renderTodos();
+    }
+    
+    // Update the display
+    displayTodos();
+    updateCount();
 }
 
- // Function to delete a todo
+// Function to delete a todo
 function deleteTodo(id) {
+    // Create a new array with all todos EXCEPT the one we want to delete
     todos = todos.filter(todo => todo.id !== id);
-    saveTodos();
-    renderTodos();
+    
+    // Update the display
+    displayTodos();
+    updateCount();
 }
 
- // Function to filter todos
-function filterTodos(filter) {
-    currentFilter = filter;
-    
-    // Update active filter button
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent.toLowerCase() === filter) {
-            btn.classList.add('active');
-        }
-    });
-    
-    renderTodos();
-}
-
- // Function to render the todo list
-function renderTodos() {
-    const todoList = document.getElementById('todoList');
+// Function to display all the todos
+function displayTodos() {
+    // Clear the current list
     todoList.innerHTML = '';
     
-    let filteredTodos = todos;
-    if (currentFilter === 'active') {
-        filteredTodos = todos.filter(todo => !todo.completed);
-    } else if (currentFilter === 'completed') {
-        filteredTodos = todos.filter(todo => todo.completed);
-    }
-    
-    filteredTodos.forEach(todo => {
-        const todoItem = document.createElement('div');
-        todoItem.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+    // Go through each todo
+    for (let i = 0; i < todos.length; i++) {
+        const todo = todos[i];
         
+        // Create a new div for this todo
+        const todoItem = document.createElement('div');
+        todoItem.className = todo.completed ? 'todo-item completed' : 'todo-item';
+        
+        // Create the HTML for this todo
         todoItem.innerHTML = `
-            <input type="checkbox" 
-                    ${todo.completed ? 'checked' : ''} 
-                    onchange="toggleTodo(${todo.id})">
-            <span class="todo-text" title="Created: ${todo.timestamp}">
-                ${todo.text}
-            </span>
-            <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
+            <input type="checkbox" ${todo.completed ? 'checked' : ''}>
+            <span class="todo-text">${todo.text}</span>
+            <button class="delete-btn">Delete</button>
         `;
         
+        // Get the checkbox and delete button
+        const checkbox = todoItem.querySelector('input');
+        const deleteBtn = todoItem.querySelector('.delete-btn');
+        
+        // Add event listeners
+        checkbox.addEventListener('change', function() {
+            toggleTodo(todo.id);
+        });
+        
+        deleteBtn.addEventListener('click', function() {
+            deleteTodo(todo.id);
+        });
+        
+        // Add this todo to the list
         todoList.appendChild(todoItem);
-    });
+    }
 }
 
- // Function to update todo count
-function updateTodoCount() {
-    const activeCount = todos.filter(todo => !todo.completed).length;
-    document.getElementById('todoCount').textContent = 
-        `${activeCount} item${activeCount !== 1 ? 's' : ''} left`;
+// Function to update the count of remaining todos
+function updateCount() {
+    // Count how many todos are not completed
+    let remaining = 0;
+    for (let i = 0; i < todos.length; i++) {
+        if (!todos[i].completed) {
+            remaining++;
+        }
+    }
+    
+    // Update the count text
+    todoCount.textContent = remaining + ' item' + (remaining !== 1 ? 's' : '') + ' left';
 }
 
- // Add event listener for Enter key
-document.getElementById('todoInput').addEventListener('keypress', function(e) {
+// Listen for Enter key in the input box
+input.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         addTodo();
     }
 });
 
- // Initial render
-renderTodos();
-updateTodoCount();
+// Initial display
+displayTodos();
+updateCount();
